@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "monitoring-api"
+    static_configs:
+      - targets: ["monitoring-api:8000"]
+
+  - job_name: "stream-processor"
+    static_configs:
+      - targets: ["stream-processor:8001"]

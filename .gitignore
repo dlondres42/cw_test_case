@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.jsonl
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.dockerignore

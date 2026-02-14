@@ -1,0 +1,2 @@
+[tool.pytest.ini_options]
+testpaths = ["common/tests", "tests", "monitoring_service/tests", "stream_processor/tests"]
