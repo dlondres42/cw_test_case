@@ -83,12 +83,6 @@ def main():
                     break
             except EOFError:
                 # Handle EOF (e.g. running detached / no TTY)
-                # In this case, we just wait for the thread to finish or keep running
-                # But if we break, we exit main, which joins the thread.
-                # If running detached in background, we usually want it to just run.
-                # So we should sleep?
-                # But if stream finishes, loop exits.
-                # Let's just wait for thread.
                 time.sleep(1)
     except KeyboardInterrupt:
         stop_event.set()

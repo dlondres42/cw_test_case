@@ -57,6 +57,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     depends_on:
       - monitoring-api
 
@@ -89,6 +90,7 @@ services:
       KAFKA_TOPIC: transactions
       KAFKA_GROUP_ID: monitoring-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     volumes:
       - api-data:/data
     depends_on:

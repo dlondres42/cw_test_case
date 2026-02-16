@@ -1,0 +1,115 @@
+groups:
+  - name: transaction_anomaly_alerts
+    rules:
+      # ── Denied Rate Alert ──────────────────────────────────────
+      - alert: HighDeniedTransactionRate
+        expr: transaction_status_rate{status="denied"} > 15
+        for: 2m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High denied transaction rate"
+          description: "Denied transactions at {{ $value }}/min (threshold: 15) for status={{ $labels.status }}"
+
+      - alert: CriticalDeniedTransactionRate
+        expr: transaction_status_rate{status="denied"} > 30
+        for: 1m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Critical denied transaction rate"
+          description: "Denied transactions at {{ $value }}/min (threshold: 30) for status={{ $labels.status }}"
+
+      # ── Failed Rate Alert ──────────────────────────────────────
+      - alert: HighFailedTransactionRate
+        expr: transaction_status_rate{status="failed"} > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High failed transaction rate"
+          description: "Failed transactions at {{ $value }}/min (threshold: 5) for status={{ $labels.status }}"
+
+      - alert: CriticalFailedTransactionRate
+        expr: transaction_status_rate{status="failed"} > 15
+        for: 1m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Critical failed transaction rate"
+          description: "Failed transactions at {{ $value }}/min (threshold: 15) for status={{ $labels.status }}"
+
+      # ── Reversed Rate Alert ────────────────────────────────────
+      - alert: HighReversedTransactionRate
+        expr: transaction_status_rate{status="reversed"} > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High reversed transaction rate"
+          description: "Reversed transactions at {{ $value }}/min (threshold: 5) for status={{ $labels.status }}"
+
+      - alert: CriticalReversedTransactionRate
+        expr: transaction_status_rate{status="reversed"} > 15
+        for: 1m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Critical reversed transaction rate"
+          description: "Reversed transactions at {{ $value }}/min (threshold: 15) for status={{ $labels.status }}"
+
+      # ── Overall Anomaly Score Alert ────────────────────────────
+      - alert: AnomalyScoreWarning
+        expr: overall_anomaly_score < -0.05
+        for: 2m
+        labels:
+          severity: warning
+          category: ml
+        annotations:
+          summary: "ML model anomaly score in warning range"
+          description: "Overall anomaly score is {{ $value }} (warning threshold: -0.05)"
+
+      - alert: AnomalyScoreCritical
+        expr: overall_anomaly_score < -0.15
+        for: 1m
+        labels:
+          severity: critical
+          category: ml
+        annotations:
+          summary: "ML model anomaly score in critical range"
+          description: "Overall anomaly score is {{ $value }} (critical threshold: -0.15)"
+
+      # ── Approval Rate Alert ────────────────────────────────────
+      - alert: LowApprovalRate
+        expr: >
+          sum(rate(transactions_by_status_total{status="approved"}[5m]))
+          /
+          sum(rate(transactions_by_status_total[5m]))
+          < 0.85
+        for: 3m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "Approval rate below 85%"
+          description: "Transaction approval rate has dropped to {{ $value | humanizePercentage }}"
+
+      - alert: CriticalApprovalRate
+        expr: >
+          sum(rate(transactions_by_status_total{status="approved"}[5m]))
+          /
+          sum(rate(transactions_by_status_total[5m]))
+          < 0.70
+        for: 2m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Approval rate below 70%"
+          description: "Transaction approval rate has dropped to {{ $value | humanizePercentage }}"

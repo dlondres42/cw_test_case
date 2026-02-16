@@ -117,6 +117,21 @@ class TestCrossServiceTracing(unittest.TestCase):
         # Verify they have different trace IDs (independent traces)
         self.assertNotEqual(consumer_span.context.trace_id, producer_span.context.trace_id,
                            "Consumer and producer should have different trace IDs (linked, not parent-child)")
+        
+        # Verify producer trace/span IDs are stored as attributes
+        producer_trace_id_hex = format(producer_span.context.trace_id, '032x')
+        producer_span_id_hex = format(producer_span.context.span_id, '016x')
+        
+        self.assertEqual(
+            consumer_span.attributes.get("messaging.producer.trace_id"),
+            producer_trace_id_hex,
+            "Consumer span should have producer trace ID as attribute"
+        )
+        self.assertEqual(
+            consumer_span.attributes.get("messaging.producer.span_id"),
+            producer_span_id_hex,
+            "Consumer span should have producer span ID as attribute"
+        )
     
     def test_trace_context_format(self):
         """Verify injected trace context follows W3C TraceContext format."""
@@ -139,6 +154,33 @@ class TestCrossServiceTracing(unittest.TestCase):
             self.assertEqual(parts[0], '00', "Should use version 00")
             self.assertEqual(len(parts[1]), 32, "Trace ID should be 32 hex chars")
             self.assertEqual(len(parts[2]), 16, "Span ID should be 16 hex chars")
+    
+    def test_extract_trace_context_returns_metadata(self):
+        """Verify extract_trace_context returns both links and metadata."""
+        from cw_common.observability.propagation import inject_trace_context, extract_trace_context
+        from opentelemetry import trace
+        
+        tracer = trace.get_tracer(__name__)
+        
+        with tracer.start_as_current_span("test_span") as span:
+            # Inject context
+            headers = {}
+            inject_trace_context(headers)
+            
+            # Extract context
+            links, metadata = extract_trace_context(headers)
+            
+            # Verify we got both links and metadata
+            self.assertEqual(len(links), 1, "Should extract one link")
+            self.assertIn("producer_trace_id", metadata)
+            self.assertIn("producer_span_id", metadata)
+            
+            # Verify metadata matches the span context
+            expected_trace_id = format(span.context.trace_id, '032x')
+            expected_span_id = format(span.context.span_id, '016x')
+            
+            self.assertEqual(metadata["producer_trace_id"], expected_trace_id)
+            self.assertEqual(metadata["producer_span_id"], expected_span_id)
 
 
 if __name__ == '__main__':

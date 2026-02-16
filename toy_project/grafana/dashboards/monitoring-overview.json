@@ -438,7 +438,10 @@
             "id": 5,
             "options": {
                 "legend": {
-                    "calcs": ["mean", "max"],
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
@@ -549,7 +552,10 @@
             "id": 6,
             "options": {
                 "legend": {
-                    "calcs": ["mean", "max"],
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
@@ -828,7 +834,7 @@
                 "type": "jaeger",
                 "uid": "Jaeger"
             },
-            "description": "Recent traces from the monitoring-api service. Click a Trace ID to open the full waterfall view in Jaeger.",
+            "description": "Recent root traces from the monitoring-api service (API-initiated requests only). Click a Trace ID to open the full waterfall view in Jaeger.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -918,8 +924,8 @@
                 ]
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
+                "h": 10,
+                "w": 24,
                 "x": 0,
                 "y": 43
             },
@@ -929,7 +935,9 @@
                 "footer": {
                     "countRows": false,
                     "fields": "",
-                    "reducer": ["sum"],
+                    "reducer": [
+                        "sum"
+                    ],
                     "show": false
                 },
                 "showHeader": true,
@@ -949,7 +957,8 @@
                     "queryType": "search",
                     "service": "monitoring-api",
                     "limit": 20,
-                    "refId": "A"
+                    "refId": "A",
+                    "tags": "span.kind=server"
                 }
             ],
             "title": "Recent Traces — monitoring-api",
@@ -961,7 +970,7 @@
                 "type": "jaeger",
                 "uid": "Jaeger"
             },
-            "description": "Recent traces from the stream-processor service. Click a Trace ID to open the full waterfall view in Jaeger.",
+            "description": "End-to-end distributed traces showing the complete message flow from producer to consumer. Each trace contains spans from both stream-processor (publish) and monitoring-api (consume). Click any Trace ID to see the full waterfall in Jaeger.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -978,14 +987,6 @@
                             {
                                 "color": "green",
                                 "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 100
-                            },
-                            {
-                                "color": "red",
-                                "value": 500
                             }
                         ]
                     }
@@ -1001,11 +1002,15 @@
                                 "id": "links",
                                 "value": [
                                     {
-                                        "title": "Open in Jaeger",
+                                        "title": "View Linked Trace Waterfall",
                                         "url": "http://localhost:16686/trace/${__value.raw}",
                                         "targetBlank": true
                                     }
                                 ]
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 320
                             }
                         ]
                     },
@@ -1018,6 +1023,13 @@
                             {
                                 "id": "unit",
                                 "value": "ms"
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "gradient",
+                                    "type": "color-background"
+                                }
                             },
                             {
                                 "id": "thresholds",
@@ -1034,35 +1046,39 @@
                                         },
                                         {
                                             "color": "red",
-                                            "value": 200
+                                            "value": 100
                                         }
                                     ]
                                 }
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Span Count"
+                        },
+                        "properties": [
                             {
-                                "id": "custom.cellOptions",
-                                "value": {
-                                    "mode": "basic",
-                                    "type": "color-background"
-                                }
+                                "id": "custom.width",
+                                "value": 110
                             }
                         ]
                     }
                 ]
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 43
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 53
             },
-            "id": 12,
+            "id": 13,
             "options": {
                 "cellHeight": "sm",
                 "footer": {
                     "countRows": false,
-                    "fields": "",
-                    "reducer": ["sum"],
+                    "enablePagination": false,
                     "show": false
                 },
                 "showHeader": true,
@@ -1081,43 +1097,529 @@
                     },
                     "queryType": "search",
                     "service": "stream-processor",
-                    "limit": 20,
+                    "limit": 25,
                     "refId": "A"
                 }
             ],
-            "title": "Recent Traces — stream-processor",
+            "title": "Linked Pub-Sub Traces (Producer → Kafka → Consumer)",
+            "type": "table",
+            "transformations": [
+                {
+                    "id": "extractFields",
+                    "options": {
+                        "source": "Trace Tags",
+                        "format": "json",
+                        "replace": false,
+                        "keepTime": false
+                    }
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 61
+            },
+            "id": 14,
+            "panels": [],
+            "title": "Transaction Business Metrics",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "Prometheus"
+            },
+            "description": "Transaction volume broken down by status (approved, denied, failed, reversed, etc.) as a stacked area chart.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "tx/sec",
+                        "axisPlacement": "auto",
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "none",
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 62
+            },
+            "id": 15,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "Prometheus"
+                    },
+                    "expr": "sum(rate(transactions_by_status_total[1m])) by (status)",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Transaction Volume by Status",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "Prometheus"
+            },
+            "description": "Per-minute rate of denied, failed, and reversed transactions — the statuses we alert on.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "count/min",
+                        "axisPlacement": "auto",
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 25
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "denied"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "failed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "reversed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "purple",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 62
+            },
+            "id": 16,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max",
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "Prometheus"
+                    },
+                    "expr": "transaction_status_rate{status=~\"denied|failed|reversed\"}",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Denied / Failed / Reversed Rate",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "Prometheus"
+            },
+            "description": "Overall anomaly score from the Isolation Forest model. Lower = more anomalous. Green (normal) → Yellow (warning) → Red (critical).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": -0.15
+                            },
+                            {
+                                "color": "#73BF69",
+                                "value": -0.05
+                            }
+                        ]
+                    },
+                    "max": 0.5,
+                    "min": -0.5
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 70
+            },
+            "id": 17,
+            "options": {
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "Prometheus"
+                    },
+                    "expr": "overall_anomaly_score",
+                    "refId": "A"
+                }
+            ],
+            "title": "Overall Anomaly Score",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "Prometheus"
+            },
+            "description": "Per-status Z-scores from the anomaly detector. Higher absolute values indicate more deviation from normal.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 2.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 4
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 6,
+                "y": 70
+            },
+            "id": 18,
+            "options": {
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "Prometheus"
+                    },
+                    "expr": "transaction_anomaly_score",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Anomaly Z-Score by Status",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "Prometheus"
+            },
+            "description": "Count of alerts fired in the last 5 minutes by status and severity.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "displayMode": "color-background-solid",
+                        "filterable": false,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 5
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 70
+            },
+            "id": 19,
+            "options": {
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Value"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "Prometheus"
+                    },
+                    "expr": "sum(increase(transaction_alerts_total[5m])) by (status, severity)",
+                    "format": "table",
+                    "instant": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "Alert History (last 5m)",
             "type": "table",
             "transformations": []
         },
         {
             "datasource": {
-                "type": "jaeger",
-                "uid": "Jaeger"
+                "type": "prometheus",
+                "uid": "Prometheus"
             },
-            "description": "Search for traces across all services. Select a trace to view the full span waterfall with links between producer and consumer spans.",
+            "description": "Approval rate = approved / total. A dropping approval rate is a key business health indicator.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.85
+                            },
+                            {
+                                "color": "green",
+                                "value": 0.95
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "max": 1,
+                    "min": 0
+                },
+                "overrides": []
+            },
             "gridPos": {
-                "h": 12,
-                "w": 24,
-                "x": 0,
-                "y": 51
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 70
             },
-            "id": 13,
-            "options": {},
+            "id": 20,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
             "targets": [
                 {
                     "datasource": {
-                        "type": "jaeger",
-                        "uid": "Jaeger"
+                        "type": "prometheus",
+                        "uid": "Prometheus"
                     },
-                    "queryType": "search",
-                    "service": "monitoring-api",
-                    "operation": "transactions receive",
-                    "limit": 20,
+                    "expr": "sum(rate(transactions_by_status_total{status=\"approved\"}[5m])) / sum(rate(transactions_by_status_total[5m]))",
                     "refId": "A"
                 }
             ],
-            "title": "Trace Timeline — Kafka Consume Operations",
-            "type": "traces"
+            "title": "Approval Rate",
+            "type": "stat"
         }
     ],
     "refresh": "5s",

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: transaction-alerts-webhook
+    receivers:
+      - uid: webhook-critical
+        type: webhook
+        settings:
+          url: http://host.docker.internal:9999/alerts
+          httpMethod: POST
+          maxAlerts: 10
+        disableResolveMessage: false

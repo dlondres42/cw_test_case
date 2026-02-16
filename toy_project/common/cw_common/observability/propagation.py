@@ -1,6 +1,5 @@
-from opentelemetry import trace
+from opentelemetry import trace, context
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from opentelemetry.trace import Link
 
 def inject_trace_context(headers: dict) -> dict:
     """
@@ -11,21 +10,20 @@ def inject_trace_context(headers: dict) -> dict:
     propagator.inject(headers)
     return headers
 
-def extract_trace_context(headers: dict) -> list[Link]:
+def extract_trace_context(headers: dict) -> context.Context:
     """
-    Extract W3C traceparent from headers and return span Links.
-    Use this when consuming a message from Kafka.
+    Extract W3C traceparent from headers and return the context.
+    
+    Returns:
+        Context: The extracted context that should be set as parent for consumer spans.
+                 Returns None if no valid context found.
+    
+    Use this when consuming a message from Kafka to continue the distributed trace
+    started by the producer.
     """
     propagator = TraceContextTextMapPropagator()
     ctx = propagator.extract(carrier=headers)
-    
-    # Create a link if a valid context was extracted
-    if ctx:
-        span_ctx = trace.get_current_span(ctx).get_span_context()
-        if span_ctx.is_valid:
-            return [Link(span_ctx)]
-    
-    return []
+    return ctx
 
 def kafka_headers_to_dict(headers: list[tuple] | None) -> dict:
     """

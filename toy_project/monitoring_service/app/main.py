@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from cw_common.observability import init_observability, get_logger, shutdown_tracing
 
 from app.database import init_db
-from app.routes import commands_router, queries_router, health_router
+from app.routes import commands_router, queries_router, health_router, alerts_router
 
 # Bootstrap logging + tracing + service-info in one call
 init_observability("monitoring-api", "0.3.0")
@@ -51,6 +51,7 @@ app = FastAPI(
 app.include_router(commands_router)
 app.include_router(queries_router)
 app.include_router(health_router)
+app.include_router(alerts_router)
 
 # Initialize telemetry at module level (before requests start)
 try:

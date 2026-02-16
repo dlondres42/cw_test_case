@@ -1,0 +1,9 @@
+\contentsline {chapter}{Introduction}{ii}{chapter*.2}%
+\contentsline {chapter}{\numberline {1}Domain Understanding}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Getting my hands dirty}{1}{section.1.1}%
+\contentsline {subsection}{\numberline {1.1.1}EDA}{1}{subsection.1.1.1}%
+\contentsline {chapter}{\numberline {2}The fun part}{4}{chapter.2}%
+\contentsline {subsection}{\numberline {2.0.1}First considerations}{4}{subsection.2.0.1}%
+\contentsline {subsection}{\numberline {2.0.2}Design decisions}{4}{subsection.2.0.2}%
+\contentsline {subsection}{\numberline {2.0.3}Implementation}{4}{subsection.2.0.3}%
+\contentsline {subsection}{\numberline {2.0.4}Results}{4}{subsection.2.0.4}%

@@ -142,3 +142,114 @@ def check_connection() -> bool:
         return True
     except Exception:
         return False
+
+
+def get_status_rates(minutes: int = 60) -> list[dict]:
+    """Get per-minute transaction counts grouped by status over a time window."""
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(
+        "db query get_status_rates",
+        kind=SpanKind.INTERNAL,
+        attributes={
+            "db.system": "sqlite",
+            "db.operation": "SELECT",
+            "db.query.window_minutes": minutes,
+        }
+    ) as span:
+        query = """
+        SELECT
+            timestamp,
+            status,
+            SUM(count) AS count
+        FROM transactions
+        WHERE timestamp >= datetime(
+            (SELECT MAX(timestamp) FROM transactions),
+            ?
+        )
+        GROUP BY timestamp, status
+        ORDER BY timestamp ASC, status ASC
+        """
+        offset = f"-{minutes} minutes"
+        with get_connection() as conn:
+            rows = conn.execute(query, (offset,)).fetchall()
+
+        result = [dict(row) for row in rows]
+        span.set_attribute("db.result_count", len(result))
+        return result
+
+
+def get_status_counts_at(minutes: int = 1) -> dict[str, int]:
+    """Get aggregated status counts for the most recent N minutes."""
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(
+        "db query get_status_counts_at",
+        kind=SpanKind.INTERNAL,
+        attributes={
+            "db.system": "sqlite",
+            "db.operation": "SELECT",
+            "db.query.window_minutes": minutes,
+        }
+    ) as span:
+        query = """
+        SELECT
+            status,
+            SUM(count) AS total
+        FROM transactions
+        WHERE timestamp >= datetime(
+            (SELECT MAX(timestamp) FROM transactions),
+            ?
+        )
+        GROUP BY status
+        """
+        offset = f"-{minutes} minutes"
+        with get_connection() as conn:
+            rows = conn.execute(query, (offset,)).fetchall()
+
+        result = {row["status"]: row["total"] for row in rows}
+        span.set_attribute("db.result_count", len(result))
+        return result
+
+
+def get_history_window(minutes: int = 60) -> list[dict]:
+    """
+    Get minute-by-minute status counts for the anomaly detector.
+
+    Returns a list of dicts (one per minute), each with status -> count mapping,
+    ordered oldest-first.
+    """
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(
+        "db query get_history_window",
+        kind=SpanKind.INTERNAL,
+        attributes={
+            "db.system": "sqlite",
+            "db.operation": "SELECT",
+            "db.query.window_minutes": minutes,
+        }
+    ) as span:
+        query = """
+        SELECT
+            timestamp,
+            status,
+            SUM(count) AS count
+        FROM transactions
+        WHERE timestamp >= datetime(
+            (SELECT MAX(timestamp) FROM transactions),
+            ?
+        )
+        GROUP BY timestamp, status
+        ORDER BY timestamp ASC
+        """
+        offset = f"-{minutes} minutes"
+        with get_connection() as conn:
+            rows = conn.execute(query, (offset,)).fetchall()
+
+        # Pivot: group by timestamp into dicts
+        from collections import defaultdict
+        by_ts: dict[str, dict] = defaultdict(dict)
+        for row in rows:
+            by_ts[row["timestamp"]][row["status"]] = row["count"]
+
+        result = [counts for _, counts in sorted(by_ts.items())]
+        span.set_attribute("db.result_count", len(result))
+        return result

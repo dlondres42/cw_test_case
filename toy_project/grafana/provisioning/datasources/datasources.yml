@@ -15,6 +15,11 @@ datasources:
     url: http://jaeger:16686
     uid: Jaeger
     editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: Loki
+        filterByTraceID: true
+        filterBySpanID: false
 
   - name: Loki
     type: loki

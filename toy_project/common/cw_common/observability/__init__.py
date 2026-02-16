@@ -24,7 +24,7 @@ import logging as _logging
 import os as _os
 
 # ── logging ──────────────────────────────────────────────────────
-from .logging import setup_logging, get_logger, JsonTraceFormatter
+from .logging import setup_logging, get_logger, JsonTraceFormatter, WebhookAlertHandler
 
 # ── metrics ──────────────────────────────────────────────────────
 from .metrics import (
