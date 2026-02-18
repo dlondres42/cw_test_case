@@ -16,9 +16,9 @@ The project is split into three packages, each with its own documentation:
 
 | Component | Description | Docs |
 |---|---|---|
-| [monitoring\_service](monitoring_service/) | FastAPI service: Kafka consumer, SQLite storage, anomaly detection, alerting API | [monitoring\_service/README.md](monitoring_service/README.md) |
-| [stream\_processor](stream_processor/) | Mock producer that replays CSV transaction data into Kafka | [stream\_processor/README.md](stream_processor/README.md) |
-| [common](common/) | Shared observability library: logging, tracing, metrics, propagation | [common/README.md](common/README.md) |
+| [monitoring\_service](toy_project/monitoring_service/) | FastAPI service: Kafka consumer, SQLite storage, anomaly detection, alerting API | [monitoring\_service/README.md](toy_project/monitoring_service/README.md) |
+| [stream\_processor](toy_project/stream_processor/) | Mock producer that replays CSV transaction data into Kafka | [stream\_processor/README.md](toy_project/stream_processor/README.md) |
+| [common](toy_project/common/) | Shared observability library: logging, tracing, metrics, propagation | [common/README.md](toy_project/common/README.md) |
 
 ## System Architecture
 
@@ -133,7 +133,7 @@ from Loki to Jaeger.
 
 - Docker and Docker Compose
 - Python 3.11+ (for local development and tests)
-- Transaction CSV data in `../sample_data/transactions/transactions.csv`
+- Transaction CSV data in `sample_data/transactions/transactions.csv`
 
 ### Starting the full stack
 
@@ -174,13 +174,13 @@ Each component has its own test suite:
 
 ```bash
 # Common library
-cd common && pip install -e ".[dev]" && pytest tests/ -v
+cd toy_project/common && pip install -e ".[dev]" && pytest tests/ -v
 
 # Monitoring service
-cd monitoring_service && pip install -e ../common && pip install -e ".[dev]" && pytest tests/ -v
+cd toy_project/monitoring_service && pip install -e ../common && pip install -e ".[dev]" && pytest tests/ -v
 
 # Stream processor
-cd stream_processor && pip install -e ../common && pip install -e ".[dev]" && pytest tests/ -v
+cd toy_project/stream_processor && pip install -e ../common && pip install -e ".[dev]" && pytest tests/ -v
 ```
 
 ### Stopping
