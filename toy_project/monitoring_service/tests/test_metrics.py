@@ -7,7 +7,7 @@ class TestMetrics(unittest.TestCase):
     
     def test_messages_consumed_counter_increments(self):
         """Test that MESSAGES_CONSUMED counter increments correctly."""
-        from monitoring_service.app.telemetry import MESSAGES_CONSUMED
+        from app.telemetry import MESSAGES_CONSUMED
         
         initial_value = MESSAGES_CONSUMED._value.get()
         
@@ -20,7 +20,7 @@ class TestMetrics(unittest.TestCase):
     
     def test_consume_duration_histogram_records(self):
         """Test that CONSUME_DURATION histogram records observations."""
-        from monitoring_service.app.telemetry import CONSUME_DURATION
+        from app.telemetry import CONSUME_DURATION
         
         # Get initial sum value
         initial_sum = CONSUME_DURATION._sum.get()
@@ -35,8 +35,8 @@ class TestMetrics(unittest.TestCase):
     
     def test_consumer_metrics_wiring(self):
         """Test that metrics can be wired into consumer module."""
-        from monitoring_service.app import consumer
-        from monitoring_service.app.telemetry import MESSAGES_CONSUMED, CONSUME_DURATION
+        from app import consumer
+        from app.telemetry import MESSAGES_CONSUMED, CONSUME_DURATION
         
         # Directly wire metrics (simulating what telemetry.init does)
         consumer.messages_consumed_counter = MESSAGES_CONSUMED
@@ -50,7 +50,7 @@ class TestMetrics(unittest.TestCase):
     
     def test_http_requests_middleware_increments_counter(self):
         """Test that HTTP_REQUESTS counter can be incremented with labels."""
-        from monitoring_service.app.telemetry import HTTP_REQUESTS
+        from app.telemetry import HTTP_REQUESTS
         
         # Get initial value
         initial_labels = ('GET', '/test', '200')
@@ -68,8 +68,8 @@ class TestMetrics(unittest.TestCase):
     
     def test_metrics_endpoint_returns_prometheus_format(self):
         """Test that /metrics endpoint returns valid Prometheus format."""
-        from monitoring_service.app.main import app
-        from monitoring_service.app.database import init_db
+        from app.main import app
+        from app.database import init_db
         
         init_db()
         
@@ -86,7 +86,7 @@ class TestMetrics(unittest.TestCase):
     
     def test_insert_duration_histogram_buckets(self):
         """Test that INSERT_DURATION histogram has correct buckets."""
-        from monitoring_service.app.telemetry import INSERT_DURATION
+        from app.telemetry import INSERT_DURATION
         
         # Expected buckets from telemetry.py
         expected_buckets = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, float('inf'))
@@ -98,8 +98,8 @@ class TestMetrics(unittest.TestCase):
 
     def test_insert_duration_wired_to_consumer(self):
         """Test that INSERT_DURATION is wired into the consumer module."""
-        from monitoring_service.app import consumer
-        from monitoring_service.app.telemetry import INSERT_DURATION
+        from app import consumer
+        from app.telemetry import INSERT_DURATION
         
         # Simulate what telemetry.init does
         consumer.insert_duration_histogram = INSERT_DURATION
@@ -109,8 +109,8 @@ class TestMetrics(unittest.TestCase):
 
     def test_insert_duration_observed_on_consume(self):
         """Test that INSERT_DURATION histogram is observed when records are inserted."""
-        from monitoring_service.app import consumer
-        from monitoring_service.app.telemetry import INSERT_DURATION
+        from app import consumer
+        from app.telemetry import INSERT_DURATION
 
         # Wire the histogram
         consumer.insert_duration_histogram = INSERT_DURATION

@@ -16,6 +16,8 @@ import logging
 import time
 from datetime import datetime, timezone
 
+from opentelemetry import trace
+
 logger = logging.getLogger("alerting")
 
 # Default cooldown: don't re-alert same status+severity within this many seconds
@@ -51,6 +53,8 @@ class AlertDispatcher:
         if result.severity == "NORMAL":
             return dispatched
 
+        tracer = trace.get_tracer(__name__)
+
         for detail in result.anomalies:
             if not detail.is_anomalous:
                 continue
@@ -73,46 +77,54 @@ class AlertDispatcher:
                 "baseline_mean": detail.baseline_mean,
                 "baseline_std": detail.baseline_std,
                 "z_score": detail.z_score,
-                "score": result.score,
+                "score": result.max_z_score,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
-            # Log at appropriate level — WebhookAlertHandler in logging.py
-            # will fire the webhook POST for CRITICAL records with alert=True
-            if severity == "CRITICAL":
-                logger.critical(
-                    "ALERT: %s transactions anomaly — count=%d, z_score=%.2f "
-                    "(baseline mean=%.2f, std=%.2f)",
-                    detail.status,
-                    detail.current_value,
-                    detail.z_score,
-                    detail.baseline_mean,
-                    detail.baseline_std,
-                    extra={
-                        "alert": True,
-                        "anomaly_details": alert_info,
-                        "alert_statuses": [detail.status],
-                        "score": result.score,
-                        "service": "monitoring-api",
-                    },
-                )
-            elif severity == "WARNING":
-                logger.warning(
-                    "ELEVATED: %s transactions above normal — count=%d, z_score=%.2f "
-                    "(baseline mean=%.2f, std=%.2f)",
-                    detail.status,
-                    detail.current_value,
-                    detail.z_score,
-                    detail.baseline_mean,
-                    detail.baseline_std,
-                    extra={
-                        "alert": True,
-                        "anomaly_details": alert_info,
-                        "alert_statuses": [detail.status],
-                        "score": result.score,
-                        "service": "monitoring-api",
-                    },
-                )
+            with tracer.start_as_current_span(
+                "dispatch anomaly alert",
+                attributes={
+                    "alert.status": detail.status,
+                    "alert.severity": severity,
+                    "alert.current_value": detail.current_value,
+                    "alert.z_score": detail.z_score,
+                    "alert.score": result.max_z_score,
+                },
+            ):
+                if severity == "CRITICAL":
+                    logger.critical(
+                        "ALERT: %s transactions anomaly — count=%d, z_score=%.2f "
+                        "(baseline mean=%.2f, std=%.2f)",
+                        detail.status,
+                        detail.current_value,
+                        detail.z_score,
+                        detail.baseline_mean,
+                        detail.baseline_std,
+                        extra={
+                            "alert": True,
+                            "anomaly_details": alert_info,
+                            "alert_statuses": [detail.status],
+                            "score": result.max_z_score,
+                            "service": "monitoring-api",
+                        },
+                    )
+                elif severity == "WARNING":
+                    logger.warning(
+                        "ELEVATED: %s transactions above normal — count=%d, z_score=%.2f "
+                        "(baseline mean=%.2f, std=%.2f)",
+                        detail.status,
+                        detail.current_value,
+                        detail.z_score,
+                        detail.baseline_mean,
+                        detail.baseline_std,
+                        extra={
+                            "alert": True,
+                            "anomaly_details": alert_info,
+                            "alert_statuses": [detail.status],
+                            "score": result.max_z_score,
+                            "service": "monitoring-api",
+                        },
+                    )
 
             # Update Prometheus alert counter
             self._update_alert_counter(detail.status, severity)

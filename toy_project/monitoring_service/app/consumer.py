@@ -8,7 +8,7 @@ from confluent_kafka import Consumer, KafkaError
 from opentelemetry import trace, context
 from opentelemetry.trace import SpanKind
 
-from app.database import insert_transactions, get_status_counts_at, get_history_window
+from app.database import insert_transactions
 
 from cw_common.observability import extract_trace_context, kafka_headers_to_dict
 
@@ -24,10 +24,6 @@ consume_duration_histogram = None
 insert_duration_histogram = None
 transactions_by_status_counter = None
 transaction_status_rate_gauge = None
-
-# Alert dispatcher — set by telemetry module if available
-alert_dispatcher = None
-anomaly_detector = None
 
 
 def _consume_loop(stop_event: threading.Event):
@@ -100,27 +96,21 @@ def _consume_loop(stop_event: threading.Event):
                     if insert_duration_histogram:
                         insert_duration_histogram.observe(insert_elapsed)
 
-                    # Per-status business metrics
+                    # Per-status business metrics — accumulate across
+                    # the batch so the gauge reflects the full batch, not
+                    # just the last record.
                     if transactions_by_status_counter or transaction_status_rate_gauge:
+                        batch_counts: dict[str, int] = {}
                         for rec in records:
                             status = rec.get("status", "unknown")
                             cnt = rec.get("count", 0)
                             if transactions_by_status_counter:
                                 transactions_by_status_counter.labels(status=status).inc(cnt)
-                            if transaction_status_rate_gauge:
-                                transaction_status_rate_gauge.labels(status=status).set(cnt)
+                            batch_counts[status] = batch_counts.get(status, 0) + cnt
 
-                    # Automatic anomaly detection after each batch
-                    if anomaly_detector and alert_dispatcher:
-                        try:
-                            current_counts = get_status_counts_at(minutes=1)
-                            history = get_history_window(minutes=60)
-                            if current_counts and history:
-                                det_result = anomaly_detector.detect(current_counts, history)
-                                if det_result.severity != "NORMAL":
-                                    alert_dispatcher.dispatch(det_result)
-                        except Exception as exc:
-                            logger.debug("Anomaly detection in consumer failed: %s", exc)
+                        if transaction_status_rate_gauge:
+                            for status, cnt in batch_counts.items():
+                                transaction_status_rate_gauge.labels(status=status).set(cnt)
 
         except Exception:
             logger.exception("Failed to process Kafka message")

@@ -32,3 +32,14 @@ class RecentRecord(BaseModel):
 class RecentResponse(BaseModel):
     records: list[RecentRecord]
     count: int
+
+
+class StatusDistribution(BaseModel):
+    status: str
+    count: int
+
+
+class StatusDistributionResponse(BaseModel):
+    window_minutes: int
+    statuses: list[StatusDistribution]
+    total: int

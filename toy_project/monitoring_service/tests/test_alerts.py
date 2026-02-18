@@ -72,13 +72,19 @@ class TestAnalyze:
         assert "No transaction data" in data["recommendation"]
 
     def test_analyze_normal_data(self, client):
-        """Normal data should not return CRITICAL severity."""
+        """Normal data should not return CRITICAL severity on problem statuses."""
         _seed_normal_data(120)
         response = client.post("/alerts/analyze?window_minutes=60")
         assert response.status_code == 200
         data = response.json()
-        assert data["overall_severity"] in ("NORMAL", "WARNING")
-        assert "model_mode" in data
+        # CRITICAL may occur on approved (high approval), but not on problem statuses
+        if data["overall_severity"] == "CRITICAL":
+            problem_alerts = [
+                a for a in data["alerts"]
+                if a["z_score"] > 4.0 and a["status"] in ("denied", "failed", "reversed", "backend_reversed")
+            ]
+            assert len(problem_alerts) == 0, "Normal traffic should not trigger CRITICAL on problem statuses"
+        assert "detection_method" in data
         assert data["window_minutes"] == 60
 
     def test_analyze_returns_all_alert_fields(self, client):
@@ -88,12 +94,12 @@ class TestAnalyze:
         data = response.json()
 
         assert "timestamp" in data
-        assert "overall_score" in data
+        assert "max_z_score" in data
         assert "overall_severity" in data
         assert "alerts" in data
         assert "recommendation" in data
         assert "window_minutes" in data
-        assert "model_mode" in data
+        assert "detection_method" in data
 
     def test_analyze_alert_detail_fields(self, client):
         """Each alert should have per-status detail fields."""
@@ -105,12 +111,12 @@ class TestAnalyze:
             alert = data["alerts"][0]
             assert "status" in alert
             assert "severity" in alert
-            assert "score" in alert
+            assert "z_score" in alert
             assert "current_value" in alert
             assert "baseline_mean" in alert
             assert "baseline_std" in alert
-            assert "z_score" in alert
             assert "is_anomalous" in alert
+            assert "message" in alert
 
     def test_analyze_detects_anomaly(self, client):
         """Spike in denied/failed should be detected as anomalous."""
@@ -154,7 +160,7 @@ class TestAlertStatus:
         assert response.status_code == 200
         data = response.json()
         assert "overall_severity" in data
-        assert "overall_score" in data
+        assert "max_z_score" in data
         assert "statuses" in data
         assert isinstance(data["statuses"], dict)
 

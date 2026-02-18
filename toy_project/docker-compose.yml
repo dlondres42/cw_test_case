@@ -57,7 +57,6 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     depends_on:
       - monitoring-api
 
@@ -71,10 +70,12 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
     depends_on:
       - prometheus
       - jaeger
       - loki
+      - monitoring-api
 
   monitoring-api:
     build:
@@ -90,7 +91,7 @@ services:
       KAFKA_TOPIC: transactions
       KAFKA_GROUP_ID: monitoring-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      ALERT_WEBHOOK_URL: https://webhook.site/676cbac0-a68a-4d0f-9c2f-3f294430b9c6
     volumes:
       - api-data:/data
     depends_on:

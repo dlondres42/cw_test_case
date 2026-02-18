@@ -24,15 +24,15 @@ class MockAnomalyDetail:
 class MockAnomalyResult:
     """Lightweight mock of AnomalyResult."""
 
-    def __init__(self, score, severity, anomalies):
-        self.score = score
+    def __init__(self, max_z_score, severity, anomalies):
+        self.max_z_score = max_z_score
         self.severity = severity
         self.anomalies = anomalies
 
 
 def _make_critical_result():
     return MockAnomalyResult(
-        score=-0.2,
+        max_z_score=8.5,
         severity="CRITICAL",
         anomalies=[
             MockAnomalyDetail("denied", 45, 5.0, 2.0, 8.5, True),
@@ -45,7 +45,7 @@ def _make_critical_result():
 
 def _make_warning_result():
     return MockAnomalyResult(
-        score=-0.08,
+        max_z_score=3.0,
         severity="WARNING",
         anomalies=[
             MockAnomalyDetail("denied", 15, 5.0, 2.0, 3.0, True),
@@ -58,7 +58,7 @@ def _make_warning_result():
 
 def _make_normal_result():
     return MockAnomalyResult(
-        score=0.2,
+        max_z_score=0.3,
         severity="NORMAL",
         anomalies=[
             MockAnomalyDetail("denied", 5, 5.0, 2.0, 0.3, False),

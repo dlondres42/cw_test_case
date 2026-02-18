@@ -71,7 +71,7 @@ TRANSACTION_ALERTS_TOTAL = create_counter(
 
 OVERALL_ANOMALY_SCORE = create_gauge(
     "overall_anomaly_score",
-    "Overall anomaly score from the Isolation Forest model",
+    "Highest Z-score from the policy-based anomaly detector",
 )
 
 
@@ -98,17 +98,10 @@ def init(app):
     except ImportError:
         pass
 
-    # Wire anomaly detector + alert dispatcher into consumer
-    try:
-        from app import consumer as _consumer
-        from anomaly_model.model import AnomalyDetector
-        from app.alerting import AlertDispatcher
-
-        _consumer.anomaly_detector = AnomalyDetector()
-        _consumer.alert_dispatcher = AlertDispatcher()
-        logger.info("Anomaly detector + alert dispatcher wired into consumer")
-    except Exception as e:
-        logger.warning("Anomaly detector init skipped: %s", e)
+    # Wire anomaly detector + alert dispatcher — now used only as
+    # fallback references; the background scheduler in scheduler.py
+    # owns periodic detection.
+    logger.info("Anomaly detection is handled by the background alert scheduler")
 
     # FastAPI auto-instrumentation (creates spans for every route)
     try:

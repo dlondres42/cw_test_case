@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -6,7 +7,7 @@ from fastapi import FastAPI
 from cw_common.observability import init_observability, get_logger, shutdown_tracing
 
 from app.database import init_db
-from app.routes import commands_router, queries_router, health_router, alerts_router
+from app.routes import queries_router, health_router, alerts_router
 
 # Bootstrap logging + tracing + service-info in one call
 init_observability("monitoring-api", "0.3.0")
@@ -15,11 +16,12 @@ logger = get_logger("monitoring-api")
 
 _kafka_thread = None
 _kafka_stop = None
+_alert_task = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _kafka_thread, _kafka_stop
+    global _kafka_thread, _kafka_stop, _alert_task
 
     init_db()
     logger.info("Database initialized")
@@ -31,7 +33,20 @@ async def lifespan(app: FastAPI):
         _kafka_thread, _kafka_stop = start_consumer()
         logger.info("Kafka consumer started")
 
+    # Start background alert scheduler
+    from app.scheduler import alert_loop
+    _alert_task = asyncio.create_task(alert_loop())
+    logger.info("Background alert scheduler started")
+
     yield
+
+    # Shutdown: cancel alert scheduler
+    if _alert_task:
+        _alert_task.cancel()
+        try:
+            await _alert_task
+        except asyncio.CancelledError:
+            pass
 
     if _kafka_stop:
         _kafka_stop.set()
@@ -47,8 +62,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Register CQRS routers
-app.include_router(commands_router)
 app.include_router(queries_router)
 app.include_router(health_router)
 app.include_router(alerts_router)

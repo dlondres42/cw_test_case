@@ -1,0 +1,5 @@
+# Alerting is handled by the monitoring service - no Grafana alert rules.
+apiVersion: 1
+
+groups: []
+
