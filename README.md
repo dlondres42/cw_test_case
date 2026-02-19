@@ -16,9 +16,9 @@ The project is split into three packages, each with its own documentation:
 
 | Component | Description | Docs |
 |---|---|---|
-| [monitoring\_service](toy_project/monitoring_service/) | FastAPI service: Kafka consumer, SQLite storage, anomaly detection, alerting API | [monitoring\_service/README.md](toy_project/monitoring_service/README.md) |
-| [stream\_processor](toy_project/stream_processor/) | Mock producer that replays CSV transaction data into Kafka | [stream\_processor/README.md](toy_project/stream_processor/README.md) |
-| [common](toy_project/common/) | Shared observability library: logging, tracing, metrics, propagation | [common/README.md](toy_project/common/README.md) |
+| [monitoring_service](./toy_project/monitoring_service/) | FastAPI service: Kafka consumer, SQLite storage, anomaly detection, alerting API | [monitoring_service/README.md](./toy_project/monitoring_service/README.md) |
+| [stream_processor](./toy_project/stream_processor/) | Mock producer that replays CSV transaction data into Kafka | [stream_processor/README.md](./toy_project/stream_processor/README.md) |
+| [common](./toy_project/common/) | Shared observability library: logging, tracing, metrics, propagation | [common/README.md](./toy_project/common/README.md) |
 
 ## System Architecture
 
